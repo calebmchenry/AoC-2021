@@ -1,20 +1,23 @@
 import System.IO  
 
-part1 :: String -> Int
-part1 contents = length $ filter (<0) $ zipWith (-) ns (tail ns)
+numberOfIncreases :: [Int] -> Int
+numberOfIncreases = length . filter (<0) . diffs
   where
-    ns = map read $ lines contents
+    diffs ns = zipWith (-) ns (tail ns)
 
-windows n xs = if length xs < n then [] else (take n xs) : windows n (tail xs)
+part1 :: [Int] -> Int
+part1 = numberOfIncreases
 
-part2 :: String -> Int
-part2 contents = length $ filter (<0) $ zipWith (-) ys (tail ys)
+part2 :: [Int] -> Int
+part2 = numberOfIncreases . windowSums
   where
-    xs = map read $ lines contents
-    ys = map sum $ filter ((>0) . length) $ windows 3 xs
+    windows n xs = if length xs < n then [] else (take n xs) : windows n (tail xs)
+    windowSums = map sum . filter ((>0) . length) . windows 3
 
 main = do  
         handle <- openFile "input.txt" ReadMode
         contents <- hGetContents handle
-        print $ part2 contents
+        let ns = map read $ lines contents
+        print $ part1 ns
+        print $ part2 ns
         hClose handle
