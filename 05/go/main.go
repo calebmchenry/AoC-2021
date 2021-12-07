@@ -65,15 +65,32 @@ func makeGrid(lines []Line) Grid {
 	return grid
 }
 
-func part1(lines []Line) int {
-	ls := []Line{}
+func getLinesFromFile(path string) []Line {
+	bytes, _ := os.ReadFile(path)
+	content := string(bytes)
+	splits := strings.Split(content, "\n")
+	lines := []Line{}
+	for _, l := range splits {
+		lines = append(lines, line(l))
+	}
+	return lines
+}
+
+func organizeLines(lines []Line) ([]Line, []Line) {
+	ss := []Line{}
+	ds := []Line{}
 	for _, l := range lines {
 		if l.start.row == l.end.row || l.start.col == l.end.col {
-			ls = append(ls, l)
+			ss = append(ss, l)
+		} else {
+			ds = append(ds, l)
 		}
 	}
-	grid := makeGrid(ls)
-	for _, l := range ls {
+	return ss, ds
+}
+
+func incrementStraightLines(grid Grid, lines []Line) Grid {
+	for _, l := range lines {
 		firstRow := int(math.Min(float64(l.start.row), float64(l.end.row)))
 		lastRow := int(math.Max(float64(l.start.row), float64(l.end.row)))
 		for r := firstRow; r <= lastRow; r++ {
@@ -84,7 +101,34 @@ func part1(lines []Line) int {
 			}
 		}
 	}
+	return grid
+}
 
+func slope(line Line) int {
+	y := line.start.row - line.end.row
+	x := line.start.col - line.end.col
+	return y / x
+}
+
+func incrementDiagonalLines(grid Grid, lines []Line) Grid {
+	for _, l := range lines {
+		firstRow := int(math.Min(float64(l.start.row), float64(l.end.row)))
+		lastRow := int(math.Max(float64(l.start.row), float64(l.end.row)))
+		var firstCol int
+		if l.start.row < l.end.row {
+			firstCol = l.start.col
+		} else {
+			firstCol = l.end.col
+		}
+		s := slope(l)
+		for r, c := firstRow, firstCol; r <= lastRow; r, c = r+1, c+s {
+			grid[r][c]++
+		}
+	}
+	return grid
+}
+
+func countIntersections(grid Grid) int {
 	count := 0
 	for r := 0; r < len(grid); r++ {
 		for c := 0; c < len(grid[r]); c++ {
@@ -93,17 +137,27 @@ func part1(lines []Line) int {
 			}
 		}
 	}
-
 	return count
 }
 
+func part1(path string) int {
+	lines := getLinesFromFile(path)
+	grid := makeGrid(lines)
+	straightLines, _ := organizeLines(lines)
+	grid = incrementStraightLines(grid, straightLines)
+	return countIntersections(grid)
+}
+
+func part2(path string) int {
+	lines := getLinesFromFile(path)
+	grid := makeGrid(lines)
+	straightLines, diagonalLines := organizeLines(lines)
+	grid = incrementStraightLines(grid, straightLines)
+	grid = incrementDiagonalLines(grid, diagonalLines)
+	return countIntersections(grid)
+}
+
 func main() {
-	bytes, _ := os.ReadFile("input.txt")
-	content := string(bytes)
-	ls := strings.Split(content, "\n")
-	lines := []Line{}
-	for _, l := range ls {
-		lines = append(lines, line(l))
-	}
-	fmt.Printf("part1: %d", part1(lines))
+	fmt.Printf("part1: %d\n", part1("../input.txt"))
+	fmt.Printf("part2: %d\n", part2("../input.txt"))
 }
